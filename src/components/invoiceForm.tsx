@@ -18,6 +18,7 @@ interface InvoiceData {
   totalAmount: number;
   customerEmail: string;
   logo: string;
+  currency: string;
 }
 
 const InvoiceForm: React.FC = () => {
@@ -32,6 +33,7 @@ const InvoiceForm: React.FC = () => {
     goodsDescription: [],
     totalAmount: 0,
     logo: "https://github.com/user-attachments/assets/c7204bb0-f62d-41bc-b3fb-012073cd3d16",
+    currency: "₪",
   });
 
   const [item, setItem] = useState<Item>({
@@ -52,6 +54,21 @@ const InvoiceForm: React.FC = () => {
       totalAmount: updatedTotalAmount,
     });
     setItem({ itemName: "", itemAmount: 0, itemPrice: 0 });
+  };
+
+  const handleRemoveItem = (index: number) => {
+    const updatedGoods = invoiceData.goodsDescription.filter(
+      (_, i) => i !== index
+    );
+    const updatedTotalAmount = updatedGoods.reduce(
+      (sum, i) => sum + i.itemAmount * i.itemPrice,
+      0
+    );
+    setInvoiceData({
+      ...invoiceData,
+      goodsDescription: updatedGoods,
+      totalAmount: updatedTotalAmount,
+    });
   };
 
   const handleSubmit = async (e: React.FormEvent, isRtl: boolean) => {
@@ -78,8 +95,6 @@ const InvoiceForm: React.FC = () => {
 
   const handlePriceChange = (e: React.ChangeEvent<HTMLInputElement>) => {
     const value = e.target.value;
-    console.log("value: ", value);
-    console.log("Number(e.target.value): ", Number(e.target.value));
     if (value === "" || /^\d+(\.\d{0,2})?$/.test(value)) {
       setItem({ ...item, itemPrice: parseFloat(value) || 0 });
     }
@@ -87,9 +102,6 @@ const InvoiceForm: React.FC = () => {
 
   const handleAmountChange = (e: React.ChangeEvent<HTMLInputElement>) => {
     const value = e.target.value;
-
-    console.log("value: ", value);
-    console.log("Number(e.target.value): ", Number(e.target.value));
     if (value === "" || /^\d+(\.\d{0,2})?$/.test(value)) {
       setItem({ ...item, itemAmount: Number(e.target.value) || 0 });
     }
@@ -214,6 +226,22 @@ const InvoiceForm: React.FC = () => {
           />
         </div>
         <div style={{ marginBottom: "10px" }}>
+          <label>{language === "en" ? "Currency:" : "מטבע:"}</label>
+          <select
+            value={invoiceData.currency}
+            onChange={(e) =>
+              setInvoiceData({ ...invoiceData, currency: e.target.value })
+            }
+            style={{ width: "100%", padding: "8px", marginBottom: "10px" }}
+          >
+            <option value='₪'>₪ - Shekel</option>
+            <option value='$'>$ - Dollar</option>
+            <option value='€'>€ - Euro</option>
+            <option value='£'>£ - Pound</option>
+            <option value='¥'>¥ - Yen</option>
+          </select>
+        </div>
+        <div style={{ marginBottom: "10px" }}>
           <label>{language === "en" ? "Items:" : "פריטים:"}</label>
           {invoiceData.goodsDescription.map((item, index) => (
             <div
@@ -222,9 +250,25 @@ const InvoiceForm: React.FC = () => {
                 padding: "8px",
                 marginBottom: "5px",
                 border: "1px solid #ccc",
+                display: "flex",
+                justifyContent: "space-between",
               }}
             >
-              {item.itemName} - {item.itemAmount} x ₪{item.itemPrice.toFixed(2)}
+              <span>
+                {item.itemName} - {item.itemAmount} x {invoiceData.currency}
+                {item.itemPrice.toFixed(2)}
+              </span>
+              <button
+                type='button'
+                onClick={() => handleRemoveItem(index)}
+                style={{
+                  marginLeft: "10px",
+                  padding: "8px 16px",
+                  cursor: "pointer",
+                }}
+              >
+                {language === "en" ? "Remove" : "הסר"}
+              </button>
             </div>
           ))}
           <div style={{ display: "flex", marginTop: "10px" }}>
@@ -265,8 +309,12 @@ const InvoiceForm: React.FC = () => {
         <div style={{ marginBottom: "10px" }}>
           <label>
             {language === "en"
-              ? `Total Amount: ₪${invoiceData.totalAmount.toFixed(2)}`
-              : `סכום כולל: ₪${invoiceData.totalAmount.toFixed(2)}`}
+              ? `Total Amount: ${
+                  invoiceData.currency
+                }${invoiceData.totalAmount.toFixed(2)}`
+              : `סכום כולל: ${
+                  invoiceData.currency
+                }${invoiceData.totalAmount.toFixed(2)}`}
           </label>
         </div>
         <button
