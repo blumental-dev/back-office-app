@@ -16,17 +16,22 @@ interface InvoiceData {
   customerAddress: string;
   goodsDescription: Item[];
   totalAmount: number;
+  customerEmail: string;
+  logo: string;
 }
 
 const InvoiceForm: React.FC = () => {
+  const [language, setLanguage] = useState<"en" | "he">("en");
   const [invoiceData, setInvoiceData] = useState<InvoiceData>({
     businessName: "",
     businessNumber: "",
     issueDate: "",
     customerName: "",
     customerAddress: "",
+    customerEmail: "john@example.com",
     goodsDescription: [],
     totalAmount: 0,
+    logo: "https://github.com/user-attachments/assets/c7204bb0-f62d-41bc-b3fb-012073cd3d16",
   });
 
   const [item, setItem] = useState<Item>({
@@ -49,11 +54,13 @@ const InvoiceForm: React.FC = () => {
     setItem({ itemName: "", itemAmount: 0, itemPrice: 0 });
   };
 
-  const handleSubmit = async (e: React.FormEvent) => {
+  const handleSubmit = async (e: React.FormEvent, isRtl: boolean) => {
+    const ltrAddress = "http://localhost:6543/api/generate-pdf/ltr";
+    const rtlAddress = "http://localhost:6543/api/generate-pdf/rtl";
     e.preventDefault();
     try {
       const response = await axios.post(
-        "http://localhost:6543/generate-pdf",
+        isRtl ? rtlAddress : ltrAddress,
         invoiceData,
         {
           responseType: "blob",
@@ -69,6 +76,25 @@ const InvoiceForm: React.FC = () => {
     }
   };
 
+  const handlePriceChange = (e: React.ChangeEvent<HTMLInputElement>) => {
+    const value = e.target.value;
+    console.log("value: ", value);
+    console.log("Number(e.target.value): ", Number(e.target.value));
+    if (value === "" || /^\d+(\.\d{0,2})?$/.test(value)) {
+      setItem({ ...item, itemPrice: parseFloat(value) || 0 });
+    }
+  };
+
+  const handleAmountChange = (e: React.ChangeEvent<HTMLInputElement>) => {
+    const value = e.target.value;
+
+    console.log("value: ", value);
+    console.log("Number(e.target.value): ", Number(e.target.value));
+    if (value === "" || /^\d+(\.\d{0,2})?$/.test(value)) {
+      setItem({ ...item, itemAmount: Number(e.target.value) || 0 });
+    }
+  };
+
   return (
     <div
       style={{
@@ -78,10 +104,24 @@ const InvoiceForm: React.FC = () => {
         fontFamily: "Arial",
       }}
     >
-      <h1>Generate Invoice</h1>
-      <form onSubmit={handleSubmit}>
+      <h1>{language === "en" ? "Generate Invoice" : "צור חשבונית"}</h1>
+      <div>
+        <button
+          onClick={() => setLanguage("en")}
+          style={{ marginRight: "10px", cursor: "pointer" }}
+        >
+          English
+        </button>
+        <button onClick={() => setLanguage("he")} style={{ cursor: "pointer" }}>
+          עברית
+        </button>
+      </div>
+      <form
+        onSubmit={(e) => handleSubmit(e, language === "he")}
+        style={{ direction: language === "he" ? "rtl" : "ltr" }}
+      >
         <div style={{ marginBottom: "10px" }}>
-          <label>Business Name:</label>
+          <label>{language === "en" ? "Business Name:" : "שם העסק:"}</label>
           <input
             type='text'
             value={invoiceData.businessName}
@@ -93,7 +133,7 @@ const InvoiceForm: React.FC = () => {
           />
         </div>
         <div style={{ marginBottom: "10px" }}>
-          <label>Business Number:</label>
+          <label>{language === "en" ? "Business Number:" : "מספר עסק:"}</label>
           <input
             type='text'
             value={invoiceData.businessNumber}
@@ -105,7 +145,7 @@ const InvoiceForm: React.FC = () => {
           />
         </div>
         <div style={{ marginBottom: "10px" }}>
-          <label>Issue Date:</label>
+          <label>{language === "en" ? "Issue Date:" : "תאריך הוצאה:"}</label>
           <input
             type='date'
             value={invoiceData.issueDate}
@@ -117,7 +157,9 @@ const InvoiceForm: React.FC = () => {
           />
         </div>
         <div style={{ marginBottom: "10px" }}>
-          <label>Delivery Note Number:</label>
+          <label>
+            {language === "en" ? "Delivery Note Number:" : "מספר תעודת משלוח:"}
+          </label>
           <input
             type='text'
             value={invoiceData.deliveryNoteNumber || ""}
@@ -131,7 +173,7 @@ const InvoiceForm: React.FC = () => {
           />
         </div>
         <div style={{ marginBottom: "10px" }}>
-          <label>Customer Name:</label>
+          <label>{language === "en" ? "Customer Name:" : "שם הלקוח:"}</label>
           <input
             type='text'
             value={invoiceData.customerName}
@@ -143,7 +185,21 @@ const InvoiceForm: React.FC = () => {
           />
         </div>
         <div style={{ marginBottom: "10px" }}>
-          <label>Customer Address:</label>
+          <label>{language === "en" ? "Customer Email:" : "מייל הלקוח:"}</label>
+          <input
+            type='text'
+            value={invoiceData.customerEmail}
+            onChange={(e) =>
+              setInvoiceData({ ...invoiceData, customerEmail: e.target.value })
+            }
+            required
+            style={{ width: "100%", padding: "8px", marginBottom: "10px" }}
+          />
+        </div>
+        <div style={{ marginBottom: "10px" }}>
+          <label>
+            {language === "en" ? "Customer Address:" : "כתובת הלקוח:"}
+          </label>
           <input
             type='text'
             value={invoiceData.customerAddress}
@@ -158,7 +214,7 @@ const InvoiceForm: React.FC = () => {
           />
         </div>
         <div style={{ marginBottom: "10px" }}>
-          <label>Items:</label>
+          <label>{language === "en" ? "Items:" : "פריטים:"}</label>
           {invoiceData.goodsDescription.map((item, index) => (
             <div
               key={index}
@@ -174,27 +230,23 @@ const InvoiceForm: React.FC = () => {
           <div style={{ display: "flex", marginTop: "10px" }}>
             <input
               type='text'
-              placeholder='Item Name'
+              placeholder={language === "en" ? "Item Name" : "שם הפריט"}
               value={item.itemName}
               onChange={(e) => setItem({ ...item, itemName: e.target.value })}
               style={{ flex: 2, padding: "8px", marginRight: "10px" }}
             />
             <input
               type='number'
-              placeholder='Amount'
-              value={item.itemAmount}
-              onChange={(e) =>
-                setItem({ ...item, itemAmount: Number(e.target.value) })
-              }
+              placeholder={language === "en" ? "Amount" : "כמות"}
+              value={item.itemAmount === 0 ? "" : item.itemAmount}
+              onChange={handleAmountChange}
               style={{ flex: 1, padding: "8px", marginRight: "10px" }}
             />
             <input
               type='number'
-              placeholder='Price'
-              value={item.itemPrice}
-              onChange={(e) =>
-                setItem({ ...item, itemPrice: Number(e.target.value) })
-              }
+              placeholder={language === "en" ? "Price" : "מחיר"}
+              value={item.itemPrice === 0 ? "" : item.itemPrice}
+              onChange={handlePriceChange}
               style={{ flex: 1, padding: "8px" }}
             />
             <button
@@ -206,18 +258,22 @@ const InvoiceForm: React.FC = () => {
                 cursor: "pointer",
               }}
             >
-              Add Item
+              {language === "en" ? "Add Item" : "הוסף פריט"}
             </button>
           </div>
         </div>
         <div style={{ marginBottom: "10px" }}>
-          <label>Total Amount: ₪{invoiceData.totalAmount.toFixed(2)}</label>
+          <label>
+            {language === "en"
+              ? `Total Amount: ₪${invoiceData.totalAmount.toFixed(2)}`
+              : `סכום כולל: ₪${invoiceData.totalAmount.toFixed(2)}`}
+          </label>
         </div>
         <button
           type='submit'
           style={{ padding: "10px 20px", cursor: "pointer" }}
         >
-          Generate PDF
+          {language === "en" ? "Generate PDF" : "צור PDF"}
         </button>
       </form>
     </div>
