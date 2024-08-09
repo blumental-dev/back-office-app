@@ -14,11 +14,13 @@ interface InvoiceData {
   deliveryNoteNumber?: string;
   customerName: string;
   customerAddress: string;
+  customerEmail: string;
   goodsDescription: Item[];
   totalAmount: number;
-  customerEmail: string;
-  logo: string;
   currency: string;
+  paymentMethod: string;
+  paymentToolNumber?: string;
+  logo: string;
 }
 
 const InvoiceForm: React.FC = () => {
@@ -32,8 +34,10 @@ const InvoiceForm: React.FC = () => {
     customerEmail: "john@example.com",
     goodsDescription: [],
     totalAmount: 0,
-    logo: "https://github.com/user-attachments/assets/c7204bb0-f62d-41bc-b3fb-012073cd3d16",
     currency: "₪",
+    paymentMethod: "",
+    paymentToolNumber: "000000",
+    logo: "https://github.com/user-attachments/assets/c7204bb0-f62d-41bc-b3fb-012073cd3d16",
   });
 
   const [item, setItem] = useState<Item>({
@@ -130,7 +134,10 @@ const InvoiceForm: React.FC = () => {
       </div>
       <form
         onSubmit={(e) => handleSubmit(e, language === "he")}
-        style={{ direction: language === "he" ? "rtl" : "ltr" }}
+        style={{
+          direction: language === "he" ? "rtl" : "ltr",
+          paddingTop: "5vh",
+        }}
       >
         <div style={{ marginBottom: "10px" }}>
           <label>{language === "en" ? "Business Name:" : "שם העסק:"}</label>
@@ -225,6 +232,7 @@ const InvoiceForm: React.FC = () => {
             style={{ width: "100%", padding: "8px", marginBottom: "10px" }}
           />
         </div>
+
         <div style={{ marginBottom: "10px" }}>
           <label>{language === "en" ? "Currency:" : "מטבע:"}</label>
           <select
@@ -234,13 +242,41 @@ const InvoiceForm: React.FC = () => {
             }
             style={{ width: "100%", padding: "8px", marginBottom: "10px" }}
           >
-            <option value='₪'>₪ - Shekel</option>
-            <option value='$'>$ - Dollar</option>
-            <option value='€'>€ - Euro</option>
-            <option value='£'>£ - Pound</option>
-            <option value='¥'>¥ - Yen</option>
+            <option value='₪'>₪</option>
+            <option value='$'>$</option>
+            <option value='€'>€</option>
+            <option value='£'>£</option>
           </select>
         </div>
+        <div style={{ marginBottom: "10px" }}>
+          <label>{language === "en" ? "Payment Method:" : "שיטת תשלום:"}</label>
+          <select
+            value={invoiceData.paymentMethod}
+            onChange={(e) =>
+              setInvoiceData({ ...invoiceData, paymentMethod: e.target.value })
+            }
+            style={{ width: "100%", padding: "8px", marginBottom: "10px" }}
+          >
+            <option value='cash'>{language === "en" ? "Cash" : "מזומן"}</option>
+            <option value='check'>{language === "en" ? "Check" : "צ'ק"}</option>
+          </select>
+        </div>
+        {invoiceData.paymentMethod === "check" && (
+          <div style={{ marginBottom: "10px" }}>
+            <label>{language === "en" ? "Check Number:" : "מספר צ'ק:"}</label>
+            <input
+              type='text'
+              value={invoiceData.paymentToolNumber || ""}
+              onChange={(e) =>
+                setInvoiceData({
+                  ...invoiceData,
+                  paymentToolNumber: e.target.value,
+                })
+              }
+              style={{ width: "100%", padding: "8px", marginBottom: "10px" }}
+            />
+          </div>
+        )}
         <div style={{ marginBottom: "10px" }}>
           <label>{language === "en" ? "Items:" : "פריטים:"}</label>
           {invoiceData.goodsDescription.map((item, index) => (
@@ -263,8 +299,12 @@ const InvoiceForm: React.FC = () => {
                 onClick={() => handleRemoveItem(index)}
                 style={{
                   marginLeft: "10px",
-                  padding: "8px 16px",
+                  padding: "4px 8px",
                   cursor: "pointer",
+                  backgroundColor: "red",
+                  color: "white",
+                  border: "none",
+                  borderRadius: "4px",
                 }}
               >
                 {language === "en" ? "Remove" : "הסר"}
